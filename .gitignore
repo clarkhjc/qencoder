@@ -1,0 +1,7 @@
+build/
+.qtcreator/
+CMakeLists.txt.user*
+.DS_Store
+
+# 本地 Claude Code 权限配置
+.claude/

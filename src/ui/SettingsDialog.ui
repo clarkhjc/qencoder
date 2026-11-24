@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingsDialog</class>
+ <widget class="QDialog" name="SettingsDialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>560</width><height>460</height></rect></property>
+  <property name="windowTitle"><string>设置</string></property>
+  <property name="minimumSize"><size><width>560</width><height>0</height></size></property>
+  <layout class="QVBoxLayout" name="outerLayout">
+   <property name="leftMargin"><number>20</number></property>
+   <property name="topMargin"><number>18</number></property>
+   <property name="rightMargin"><number>20</number></property>
+   <property name="bottomMargin"><number>16</number></property>
+   <property name="spacing"><number>14</number></property>
+   <item>
+    <widget class="QGroupBox" name="ioGroup">
+     <property name="title"><string>输出与工具</string></property>
+     <layout class="QFormLayout" name="ioForm">
+      <property name="leftMargin"><number>16</number></property>
+      <property name="topMargin"><number>20</number></property>
+      <property name="rightMargin"><number>16</number></property>
+      <property name="bottomMargin"><number>14</number></property>
+      <property name="horizontalSpacing"><number>14</number></property>
+      <property name="verticalSpacing"><number>10</number></property>
+      <item row="0" column="0"><widget class="QLabel" name="outputLabel"><property name="text"><string>默认输出目录</string></property></widget></item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="outputRow">
+        <property name="spacing"><number>8</number></property>
+        <item><widget class="QLineEdit" name="outputDirEdit"><property name="placeholderText"><string>（默认放在输入文件旁）</string></property></widget></item>
+        <item><widget class="QPushButton" name="outputBrowseBtn"><property name="text"><string>浏览</string></property></widget></item>
+       </layout>
+      </item>
+      <item row="1" column="0"><widget class="QLabel" name="ffmpegLabel"><property name="text"><string>ffmpeg 目录</string></property></widget></item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="ffmpegRow">
+        <property name="spacing"><number>8</number></property>
+        <item><widget class="QLineEdit" name="ffmpegDirEdit"><property name="placeholderText"><string>（自动搜索 PATH 与常见安装目录）</string></property></widget></item>
+        <item><widget class="QPushButton" name="ffmpegBrowseBtn"><property name="text"><string>浏览</string></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="prefsGroup">
+     <property name="title"><string>队列与外观</string></property>
+     <layout class="QFormLayout" name="prefsForm">
+      <property name="leftMargin"><number>16</number></property>
+      <property name="topMargin"><number>20</number></property>
+      <property name="rightMargin"><number>16</number></property>
+      <property name="bottomMargin"><number>14</number></property>
+      <property name="horizontalSpacing"><number>14</number></property>
+      <property name="verticalSpacing"><number>10</number></property>
+      <item row="0" column="0"><widget class="QLabel" name="parallelLabel"><property name="text"><string>最大并发数</string></property></widget></item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="maxParallelSpin">
+        <property name="minimum"><number>0</number></property>
+        <property name="maximum"><number>16</number></property>
+        <property name="specialValueText"><string>自动（CPU-1）</string></property>
+       </widget>
+      </item>
+      <item row="1" column="0"><widget class="QLabel" name="presetLabel"><property name="text"><string>默认预设</string></property></widget></item>
+      <item row="1" column="1"><widget class="QComboBox" name="defaultPresetCombo"/></item>
+      <item row="2" column="0"><widget class="QLabel" name="themeLabel"><property name="text"><string>主题</string></property></widget></item>
+      <item row="2" column="1"><widget class="QComboBox" name="themeCombo"/></item>
+      <item row="3" column="1"><widget class="QCheckBox" name="notificationsCheck"><property name="text"><string>完成/失败系统通知</string></property></widget></item>
+     </layout>
+    </widget>
+   </item>
+   <item><spacer name="verticalSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>10</height></size></property></spacer></item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonRow">
+     <property name="spacing"><number>8</number></property>
+     <item><spacer name="buttonSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+     <item><widget class="QPushButton" name="saveBtn"><property name="text"><string>保存</string></property><property name="default"><bool>true</bool></property></widget></item>
+     <item><widget class="QPushButton" name="cancelBtn"><property name="text"><string>取消</string></property></widget></item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

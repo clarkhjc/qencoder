@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PresetEditor</class>
+ <widget class="QDialog" name="PresetEditor">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>780</width><height>540</height></rect></property>
+  <property name="windowTitle"><string>编辑预设</string></property>
+  <property name="minimumSize"><size><width>780</width><height>540</height></size></property>
+  <layout class="QVBoxLayout" name="rootLayout">
+   <property name="leftMargin"><number>20</number></property>
+   <property name="topMargin"><number>18</number></property>
+   <property name="rightMargin"><number>20</number></property>
+   <property name="bottomMargin"><number>16</number></property>
+   <property name="spacing"><number>14</number></property>
+   <item>
+    <layout class="QHBoxLayout" name="contentLayout">
+     <property name="spacing"><number>20</number></property>
+     <item>
+      <layout class="QVBoxLayout" name="leftLayout">
+       <item><widget class="QLabel" name="paramsTitle"><property name="text"><string>编码参数</string></property></widget></item>
+       <item>
+        <layout class="QFormLayout" name="formLayout">
+         <property name="horizontalSpacing"><number>12</number></property>
+         <property name="verticalSpacing"><number>8</number></property>
+         <item row="0" column="0"><widget class="QLabel" name="nameLabel"><property name="text"><string>名称</string></property></widget></item>
+         <item row="0" column="1"><widget class="QLineEdit" name="nameEdit"><property name="placeholderText"><string>H.264 1080P</string></property></widget></item>
+         <item row="1" column="0"><widget class="QLabel" name="containerLabel"><property name="text"><string>容器</string></property></widget></item>
+         <item row="1" column="1"><widget class="QLineEdit" name="containerEdit"><property name="placeholderText"><string>mp4</string></property></widget></item>
+         <item row="2" column="0"><widget class="QLabel" name="vcodecLabel"><property name="text"><string>视频编码</string></property></widget></item>
+         <item row="2" column="1"><widget class="QLineEdit" name="vcodecEdit"><property name="placeholderText"><string>libx264 或 copy</string></property></widget></item>
+         <item row="3" column="0"><widget class="QLabel" name="vpresetLabel"><property name="text"><string>-preset</string></property></widget></item>
+         <item row="3" column="1"><widget class="QLineEdit" name="vpresetEdit"><property name="placeholderText"><string>medium</string></property></widget></item>
+         <item row="4" column="0"><widget class="QLabel" name="crfLabel"><property name="text"><string>-crf（质量）</string></property></widget></item>
+         <item row="4" column="1"><widget class="QLineEdit" name="crfEdit"><property name="placeholderText"><string>23</string></property></widget></item>
+         <item row="5" column="0"><widget class="QLabel" name="vbitrateLabel"><property name="text"><string>视频码率</string></property></widget></item>
+         <item row="5" column="1"><widget class="QLineEdit" name="vbitrateEdit"><property name="placeholderText"><string>3000k</string></property></widget></item>
+         <item row="6" column="0"><widget class="QLabel" name="sizeLabel"><property name="text"><string>分辨率</string></property></widget></item>
+         <item row="6" column="1"><widget class="QLineEdit" name="sizeEdit"><property name="placeholderText"><string>1920x1080 或 原比例 1080P</string></property></widget></item>
+         <item row="7" column="0"><widget class="QLabel" name="fpsLabel"><property name="text"><string>帧率</string></property></widget></item>
+         <item row="7" column="1"><widget class="QLineEdit" name="fpsEdit"><property name="placeholderText"><string>30</string></property></widget></item>
+         <item row="8" column="0"><widget class="QLabel" name="acodecLabel"><property name="text"><string>音频编码</string></property></widget></item>
+         <item row="8" column="1"><widget class="QLineEdit" name="acodecEdit"><property name="placeholderText"><string>aac 或 copy</string></property></widget></item>
+         <item row="9" column="0"><widget class="QLabel" name="abitrateLabel"><property name="text"><string>音频码率</string></property></widget></item>
+         <item row="9" column="1"><widget class="QLineEdit" name="abitrateEdit"><property name="placeholderText"><string>128k</string></property></widget></item>
+         <item row="10" column="0"><widget class="QLabel" name="arateLabel"><property name="text"><string>采样率</string></property></widget></item>
+         <item row="10" column="1"><widget class="QLineEdit" name="arateEdit"><property name="placeholderText"><string>44100</string></property></widget></item>
+         <item row="11" column="0"><widget class="QLabel" name="channelsLabel"><property name="text"><string>声道数</string></property></widget></item>
+         <item row="11" column="1"><widget class="QSpinBox" name="achannelsSpin"><property name="minimum"><number>0</number></property><property name="maximum"><number>8</number></property><property name="specialValueText"><string>默认</string></property></widget></item>
+         <item row="12" column="0"><widget class="QLabel" name="extraLabel"><property name="text"><string>追加参数</string></property></widget></item>
+         <item row="12" column="1"><widget class="QLineEdit" name="extraEdit"><property name="placeholderText"><string>-movflags +faststart</string></property></widget></item>
+        </layout>
+       </item>
+       <item><spacer name="leftSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>10</height></size></property></spacer></item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="rightLayout">
+       <item><widget class="QLabel" name="previewTitle"><property name="text"><string>生效参数预览</string></property></widget></item>
+       <item><widget class="QTableWidget" name="previewTable"><property name="minimumSize"><size><width>300</width><height>0</height></size></property></widget></item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonRow">
+     <property name="spacing"><number>8</number></property>
+     <item><spacer name="buttonSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+     <item><widget class="QPushButton" name="okBtn"><property name="text"><string>确定</string></property><property name="default"><bool>true</bool></property></widget></item>
+     <item><widget class="QPushButton" name="cancelBtn"><property name="text"><string>取消</string></property></widget></item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

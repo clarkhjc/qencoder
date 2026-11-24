@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PresetDialog</class>
+ <widget class="QDialog" name="PresetDialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>640</width><height>420</height></rect></property>
+  <property name="windowTitle"><string>参数预设</string></property>
+  <property name="minimumSize"><size><width>640</width><height>420</height></size></property>
+  <layout class="QVBoxLayout" name="rootLayout">
+   <property name="leftMargin"><number>20</number></property>
+   <property name="topMargin"><number>18</number></property>
+   <property name="rightMargin"><number>20</number></property>
+   <property name="bottomMargin"><number>16</number></property>
+   <property name="spacing"><number>12</number></property>
+   <item><widget class="QLabel" name="hintLabel"><property name="text"><string>双击预设可直接编辑；导入/导出使用 JSON 文件。</string></property></widget></item>
+   <item><widget class="QListWidget" name="presetList"><property name="alternatingRowColors"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>240</height></size></property></widget></item>
+   <item>
+    <layout class="QHBoxLayout" name="buttonRow">
+     <property name="spacing"><number>8</number></property>
+     <item><widget class="QPushButton" name="newBtn"><property name="text"><string>新建</string></property></widget></item>
+     <item><widget class="QPushButton" name="editBtn"><property name="text"><string>编辑</string></property></widget></item>
+     <item><widget class="QPushButton" name="cloneBtn"><property name="text"><string>克隆</string></property></widget></item>
+     <item><widget class="QPushButton" name="deleteBtn"><property name="text"><string>删除</string></property></widget></item>
+     <item><spacer name="buttonSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+     <item><widget class="QPushButton" name="importBtn"><property name="text"><string>导入</string></property></widget></item>
+     <item><widget class="QPushButton" name="exportBtn"><property name="text"><string>导出</string></property></widget></item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
