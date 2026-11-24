@@ -24,24 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "6.8.3"
-          # qtbase: Core / Widgets / Sql + plugins
-          # qtsvg:  SVG image plugin and Qt6::Svg
-          archives: "qtbase qtsvg"
-          cache: true
-
-      # smoke_test uses lavfi + libx264 to generate a real test clip.
-      - name: Install ffmpeg
-        run: brew install ffmpeg
+      # Use Homebrew's Qt build, which matches the runner's macOS SDK.
+      # The official Qt 6.8.3 binaries still reference the removed AGL framework
+      # on recent macOS runners.
+      - name: Install Qt and ffmpeg
+        run: brew install qtbase qtsvg ffmpeg
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          QT_BASE="$(brew --prefix qtbase)"
+          QT_SVG="$(brew --prefix qtsvg)"
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$QT_BASE" \
+            -DQt6Svg_DIR="$QT_SVG/lib/cmake/Qt6Svg"
 
       - name: Build
         run: cmake --build build --parallel

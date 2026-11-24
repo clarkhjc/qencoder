@@ -120,7 +120,7 @@ Key ideas:
 ## Requirements
 
 - macOS 12 or newer
-- Qt 6.8+ (developed with Qt 6.12; CI uses Qt 6.8.3)
+- Qt 6.8+ (developed with Qt 6.12; CI builds against Homebrew Qt on macOS)
 - CMake 3.16+
 - C++17 compiler (Apple Clang)
 - `ffmpeg` and `ffprobe` available in `PATH` or configured in Settings
