@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    name: Build, test and package (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          # qtbase: Core / Widgets / Sql + plugins
+          # qtsvg:  SVG image plugin and Qt6::Svg
+          archives: "qtbase qtsvg"
+          cache: true
+
+      # smoke_test uses lavfi + libx264 to generate a real test clip.
+      - name: Install ffmpeg
+        run: brew install ffmpeg
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      # Produces a self-contained QEncoder.app / QEncoder.dmg.
+      - name: Package with macdeployqt
+        run: cmake --build build --target deploy_macos
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: QEncoder-macOS
+          path: build/QEncoder.dmg
+          if-no-files-found: error
+          retention-days: 14
