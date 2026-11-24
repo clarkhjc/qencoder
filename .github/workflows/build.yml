@@ -48,8 +48,9 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
-      # Produces a self-contained QEncoder.app / QEncoder.dmg.
-      - name: Package with macdeployqt
+      # Produces a self-contained QEncoder.app / QEncoder.dmg with an
+      # Applications shortcut for drag-and-drop installation.
+      - name: Package app and DMG
         run: cmake --build build --target deploy_macos
 
       - name: Upload DMG

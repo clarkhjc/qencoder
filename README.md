@@ -183,6 +183,9 @@ cmake --build build --target deploy_macos
 # -> build/QEncoder.dmg
 ```
 
+The DMG contains `QEncoder.app` plus an `Applications` shortcut for
+drag-and-drop installation.
+
 Optional signing and notarization:
 
 ```bash

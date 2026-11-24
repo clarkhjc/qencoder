@@ -124,17 +124,32 @@ if(APPLE AND QENCODER_MACOS_BUNDLE)
 
     find_program(QENCODER_MACDEPLOYQT NAMES macdeployqt HINTS "${Qt6_DIR}/../../../bin")
     if(QENCODER_MACDEPLOYQT)
-        set(_qencoder_macdeploy_args -dmg)
+        set(_qencoder_macdeploy_args)
         if(QENCODER_MACOS_SIGN_IDENTITY)
             list(APPEND _qencoder_macdeploy_args
                  "-sign-for-notarization=${QENCODER_MACOS_SIGN_IDENTITY}")
         endif()
 
+        # 先用 macdeployqt 打包 Qt 依赖，再自定义 DMG：
+        # 放入 QEncoder.app 和指向 /Applications 的快捷方式，方便拖拽安装。
+        set(QENCODER_DMG_STAGE "${CMAKE_CURRENT_BINARY_DIR}/dmg-stage")
+        set(QENCODER_DMG_PATH "${CMAKE_CURRENT_BINARY_DIR}/QEncoder.dmg")
+
         add_custom_target(deploy_macos
+            COMMAND "${CMAKE_COMMAND}" -E remove_directory "${QENCODER_DMG_STAGE}"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${QENCODER_DMG_STAGE}"
             COMMAND "${QENCODER_MACDEPLOYQT}"
                     "$<TARGET_BUNDLE_DIR:qencoder>" ${_qencoder_macdeploy_args}
+            COMMAND ditto "$<TARGET_BUNDLE_DIR:qencoder>"
+                    "${QENCODER_DMG_STAGE}/QEncoder.app"
+            COMMAND "${CMAKE_COMMAND}" -E create_symlink
+                    "/Applications" "${QENCODER_DMG_STAGE}/Applications"
+            COMMAND hdiutil create -volname "QEncoder"
+                    -srcfolder "${QENCODER_DMG_STAGE}"
+                    -ov -format UDZO "${QENCODER_DMG_PATH}"
+            COMMAND "${CMAKE_COMMAND}" -E remove_directory "${QENCODER_DMG_STAGE}"
             DEPENDS qencoder
-            COMMENT "macdeployqt：打包 Qt 依赖并生成 QEncoder.dmg"
+            COMMENT "打包 Qt 依赖并生成带 Applications 快捷方式的 QEncoder.dmg"
             VERBATIM)
 
         if(QENCODER_MACOS_SIGN_IDENTITY AND QENCODER_NOTARY_PROFILE)
