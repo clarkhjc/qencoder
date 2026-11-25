@@ -52,6 +52,10 @@ set(QENCODER_CORE_SOURCES
     src/ui/SettingsDialog.cpp
     src/ui/SettingsDialog.hpp
     src/ui/SettingsDialog.ui
+    src/ui/TaskTableDelegates.cpp
+    src/ui/TaskTableDelegates.hpp
+    src/ui/TaskTableModel.cpp
+    src/ui/TaskTableModel.hpp
     # resources
     icons.qrc)
 

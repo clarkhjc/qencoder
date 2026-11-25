@@ -5,8 +5,8 @@
 #include <QMainWindow>
 
 class QLabel;
-class QProgressBar;
 class QToolButton;
+class TaskTableModel;
 
 namespace Ui {
 class MainWindow;
@@ -34,20 +34,14 @@ private slots:
     void onCancelAll();
     void onRemoveAll();
     void onTaskAdded(TranscodeTask t);
-    void onStateChanged(const QString &id);
-    void onProgress(const QString &id, double pct, qint64 elapsedMs, double speed);
     void onTaskFinished(const QString &id, TranscodeTask::State state, QString error);
+    void onTaskAction(const QString &id, int action);
 
 private:
-    void addTaskRow(const TranscodeTask &t);
-    void updateRowButtons(int r);
     void updateEnvironmentStatus();
     void updateEmptyState();
     void updateToolbarState();
     void updateQueueSummary();
-    QProgressBar *progressBarAt(int row) const;
-    QLabel *progressLabelAt(int row) const;
-    int rowOf(const QString &id) const;
 
     Ui::MainWindow *ui;
     QLabel *m_envLabel = nullptr;
@@ -57,5 +51,6 @@ private:
     QToolButton *m_resumeBtn = nullptr;
     QToolButton *m_cancelBtn = nullptr;
     QToolButton *m_clearBtn = nullptr;
+    TaskTableModel *m_model = nullptr;
     TaskQueue m_queue;
 };

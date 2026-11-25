@@ -14,7 +14,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QSettings>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QToolBar>
 #include <QToolButton>
@@ -125,8 +125,9 @@ int main(int argc, char *argv[])
 
         // 模拟重启：新窗口应能从数据库恢复全部 6 个任务
         MainWindow reloaded;
-        auto *reloadedTable = reloaded.findChild<QTableWidget *>(QStringLiteral("taskTable"));
-        const int reloadedRows = reloadedTable ? reloadedTable->rowCount() : -1;
+        auto *reloadedTable = reloaded.findChild<QTableView *>(QStringLiteral("taskTable"));
+        const int reloadedRows =
+            (reloadedTable && reloadedTable->model()) ? reloadedTable->model()->rowCount() : -1;
         qDebug() << "reloaded task rows:" << reloadedRows;
         if (reloadedRows != 6)
             ++failures;

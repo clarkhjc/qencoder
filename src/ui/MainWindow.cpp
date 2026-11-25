@@ -6,61 +6,20 @@
 #include "ui/PresetDialog.hpp"
 #include "settings/Settings.hpp"
 #include "ui/SettingsDialog.hpp"
+#include "ui/TaskTableDelegates.hpp"
+#include "ui/TaskTableModel.hpp"
 
 #include <QApplication>
-#include <QColor>
 #include <QFileInfo>
-#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
-#include <QProgressBar>
 #include <QPushButton>
 #include <QStatusBar>
 #include <QStyle>
+#include <QTableView>
 #include <QToolBar>
 #include <QToolButton>
-
-namespace {
-
-QString stateText(TranscodeTask::State s)
-{
-    switch (s) {
-    case TranscodeTask::State::Waiting: return QObject::tr("等待");
-    case TranscodeTask::State::Running: return QObject::tr("转码中");
-    case TranscodeTask::State::Paused: return QObject::tr("暂停");
-    case TranscodeTask::State::Done: return QObject::tr("完成");
-    case TranscodeTask::State::Failed: return QObject::tr("失败");
-    case TranscodeTask::State::Cancelled: return QObject::tr("已取消");
-    }
-    return {};
-}
-
-QString stateLabel(TranscodeTask::State s)
-{
-    return QStringLiteral("●  ") + stateText(s);
-}
-
-QColor stateColor(TranscodeTask::State s)
-{
-    switch (s) {
-    case TranscodeTask::State::Waiting: return QColor("#8b949e");
-    case TranscodeTask::State::Running: return QColor("#2ea043");
-    case TranscodeTask::State::Paused: return QColor("#d29922");
-    case TranscodeTask::State::Done: return QColor("#2ea043");
-    case TranscodeTask::State::Failed: return QColor("#f85149");
-    case TranscodeTask::State::Cancelled: return QColor("#8b949e");
-    }
-    return {};
-}
-
-bool isTerminal(TranscodeTask::State s)
-{
-    return s == TranscodeTask::State::Done || s == TranscodeTask::State::Failed
-           || s == TranscodeTask::State::Cancelled;
-}
-
-} // namespace
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -107,26 +66,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     toolbar->addWidget(settings);
 
     // ---- 任务表 ----
-    QTableWidget *table = ui->taskTable;
-    table->setColumnCount(6);
-    table->setHorizontalHeaderLabels(
-        QStringList() << tr("状态") << tr("任务") << tr("进度") << tr("耗时/速度")
-                      << tr("输出路径") << tr("操作"));
+    auto *table = ui->taskTable;
+    m_model = new TaskTableModel(this);
+    table->setModel(m_model);
+
+    auto *actionDelegate = new ActionDelegate(table);
+    table->setItemDelegateForColumn(TaskTableModel::ProgressColumn,
+                                    new ProgressDelegate(table));
+    table->setItemDelegateForColumn(TaskTableModel::TimeSpeedColumn,
+                                    new TimeSpeedDelegate(table));
+    table->setItemDelegateForColumn(TaskTableModel::ActionColumn, actionDelegate);
+
     auto *header = table->horizontalHeader();
     header->setStretchLastSection(false);
     header->setHighlightSections(false);
     header->setMinimumSectionSize(64);
     header->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    header->setSectionResizeMode(1, QHeaderView::Stretch);
-    header->setSectionResizeMode(2, QHeaderView::Fixed);
-    header->setSectionResizeMode(3, QHeaderView::Fixed);
-    header->setSectionResizeMode(4, QHeaderView::Stretch);
-    header->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    table->setColumnWidth(2, 180);
-    table->setColumnWidth(3, 120);
+    header->setSectionResizeMode(TaskTableModel::StateColumn, QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(TaskTableModel::TaskColumn, QHeaderView::Stretch);
+    header->setSectionResizeMode(TaskTableModel::ProgressColumn, QHeaderView::Fixed);
+    header->setSectionResizeMode(TaskTableModel::TimeSpeedColumn, QHeaderView::Fixed);
+    header->setSectionResizeMode(TaskTableModel::OutputColumn, QHeaderView::Stretch);
+    header->setSectionResizeMode(TaskTableModel::ActionColumn, QHeaderView::Fixed);
+    table->setColumnWidth(TaskTableModel::ProgressColumn, 180);
+    table->setColumnWidth(TaskTableModel::TimeSpeedColumn, 120);
+    table->setColumnWidth(TaskTableModel::ActionColumn, 190);
+
     table->verticalHeader()->setVisible(false);
     table->verticalHeader()->setDefaultSectionSize(46);
+    table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     table->setShowGrid(false);
     table->setAlternatingRowColors(true);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -136,6 +104,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     table->setWordWrap(false);
+    table->setMouseTracking(true);
 
     // ---- 空状态页 ----
     ui->emptyIconLabel->setPixmap(IconFactory::icon("add-file").pixmap(72, 72));
@@ -157,13 +126,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->emptyAddDirBtn, &QPushButton::clicked, this, &MainWindow::onAddDir);
 
     connect(&m_queue, &TaskQueue::taskAdded, this, &MainWindow::onTaskAdded);
-    connect(&m_queue, &TaskQueue::stateChanged, this, &MainWindow::onStateChanged);
-    connect(&m_queue, &TaskQueue::progress, this, &MainWindow::onProgress);
+    connect(&m_queue, &TaskQueue::stateChanged, m_model, &TaskTableModel::updateState);
+    connect(&m_queue, &TaskQueue::stateChanged, this,
+            [this](const QString &, TranscodeTask::State) { updateToolbarState(); });
+    connect(&m_queue, &TaskQueue::progress, m_model, &TaskTableModel::updateProgress);
     connect(&m_queue, &TaskQueue::taskFinished, this, &MainWindow::onTaskFinished);
+    connect(actionDelegate, &ActionDelegate::actionTriggered, this,
+            &MainWindow::onTaskAction);
     connect(&m_queue, &TaskQueue::notice, this,
             [this](const QString &msg) { statusBar()->showMessage(msg, 5000); });
     connect(&m_queue, &TaskQueue::tasksCleared, this, [this] {
-        ui->taskTable->setRowCount(0);
+        m_model->clear();
         updateEmptyState();
         updateToolbarState();
     });
@@ -209,7 +182,7 @@ void MainWindow::updateEnvironmentStatus()
 
 void MainWindow::updateEmptyState()
 {
-    ui->mainStack->setCurrentWidget(ui->taskTable->rowCount() > 0
+    ui->mainStack->setCurrentWidget(m_model->rowCount() > 0
                                         ? static_cast<QWidget *>(ui->taskPage)
                                         : ui->emptyPage);
 }
@@ -360,237 +333,47 @@ void MainWindow::onRemoveAll()
     statusBar()->showMessage(tr("已删除全部任务"), 4000);
 }
 
-int MainWindow::rowOf(const QString &id) const
-{
-    for (int i = 0; i < ui->taskTable->rowCount(); ++i)
-        if (ui->taskTable->item(i, 0)
-            && ui->taskTable->item(i, 0)->data(Qt::UserRole).toString() == id)
-            return i;
-    return -1;
-}
-
-QProgressBar *MainWindow::progressBarAt(int row) const
-{
-    if (QWidget *w = ui->taskTable->cellWidget(row, 2))
-        return w->findChild<QProgressBar *>();
-    return nullptr;
-}
-
-QLabel *MainWindow::progressLabelAt(int row) const
-{
-    if (QWidget *w = ui->taskTable->cellWidget(row, 2))
-        return w->findChild<QLabel *>(QStringLiteral("progressValue"));
-    return nullptr;
-}
-
-void MainWindow::addTaskRow(const TranscodeTask &t)
-{
-    QTableWidget *table = ui->taskTable;
-    const int r = table->rowCount();
-    table->insertRow(r);
-
-    auto *stateCell = new QTableWidgetItem(stateLabel(t.state));
-    stateCell->setData(Qt::UserRole, t.id);
-    stateCell->setForeground(QBrush(stateColor(t.state)));
-    stateCell->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    table->setItem(r, 0, stateCell);
-
-    auto *nameCell = new QTableWidgetItem(QFileInfo(t.inputPath).fileName());
-    if (QFileInfo::exists(t.inputPath)) {
-        nameCell->setToolTip(t.inputPath);
-    } else {
-        nameCell->setText(nameCell->text() + tr("（源文件缺失）"));
-        nameCell->setToolTip(tr("源文件不存在：") + t.inputPath);
-    }
-    nameCell->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    table->setItem(r, 1, nameCell);
-
-    auto *bar = new QProgressBar;
-    bar->setRange(0, 100);
-    bar->setValue(static_cast<int>(t.progress));
-    bar->setTextVisible(false);
-    bar->setFixedHeight(8);
-    auto *pct = new QLabel(QStringLiteral("%1%").arg(static_cast<int>(t.progress)));
-    pct->setObjectName("progressValue");
-    pct->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    pct->setFixedWidth(40);
-    auto *barWrap = new QWidget;
-    auto *barLayout = new QHBoxLayout(barWrap);
-    barLayout->setContentsMargins(10, 0, 10, 0);
-    barLayout->setSpacing(8);
-    barLayout->addWidget(bar, 1, Qt::AlignVCenter);
-    barLayout->addWidget(pct, 0, Qt::AlignVCenter);
-    table->setCellWidget(r, 2, barWrap);
-
-    auto *timeCell = new QTableWidgetItem(QStringLiteral("—"));
-    timeCell->setToolTip(tr("已用时 / 转码速度"));
-    timeCell->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    table->setItem(r, 3, timeCell);
-
-    auto *outCell = new QTableWidgetItem(t.outputPath);
-    outCell->setToolTip(t.outputPath);
-    outCell->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    table->setItem(r, 4, outCell);
-
-    auto *ops = new QWidget;
-    ops->setObjectName("rowActions");
-    auto *opsLayout = new QHBoxLayout(ops);
-    opsLayout->setContentsMargins(6, 9, 6, 9);
-    opsLayout->setSpacing(2);
-
-    auto makeAction = [](const QString &name, const QString &icon, const QString &tip) {
-        auto *b = new QToolButton;
-        b->setObjectName(name);
-        b->setIcon(IconFactory::icon(icon));
-        b->setIconSize(QSize(16, 16));
-        b->setText(tip);
-        b->setToolTip(tip);
-        b->setAccessibleName(tip);
-        b->setFixedSize(28, 28);
-        b->setCursor(Qt::PointingHandCursor);
-        return b;
-    };
-
-    auto *start = makeAction("btnStart", "play", tr("启动"));
-    auto *pause = makeAction("btnPause", "pause", tr("暂停"));
-    auto *resume = makeAction("btnResume", "resume", tr("恢复"));
-    auto *cancel = makeAction("btnCancel", "stop", tr("停止"));
-    auto *remove = makeAction("btnRemove", "trash", tr("移除"));
-
-    ops->setProperty("taskId", t.id);
-    opsLayout->addWidget(start);
-    opsLayout->addWidget(pause);
-    opsLayout->addWidget(resume);
-    opsLayout->addWidget(cancel);
-    opsLayout->addWidget(remove);
-    opsLayout->addStretch();
-    table->setCellWidget(r, 5, ops);
-
-    connect(start, &QToolButton::clicked, this, [this, id = t.id] {
-        m_queue.startTask(id);
-        onStateChanged(id);
-    });
-    connect(pause, &QToolButton::clicked, this, [this, id = t.id] {
-        m_queue.pauseTask(id);
-        onStateChanged(id);
-    });
-    connect(resume, &QToolButton::clicked, this, [this, id = t.id] {
-        m_queue.resumeTask(id);
-        onStateChanged(id);
-    });
-    connect(cancel, &QToolButton::clicked, this, [this, id = t.id] {
-        m_queue.cancelTask(id);
-        onStateChanged(id);
-    });
-    connect(remove, &QToolButton::clicked, this, [this, id = t.id] {
-        const int idx = m_queue.indexOf(id);
-        if (idx < 0 || !m_queue.removeTask(idx))
-            return;
-        const int row = rowOf(id);
-        if (row >= 0)
-            ui->taskTable->removeRow(row);
-        updateEmptyState();
-        updateToolbarState();
-    });
-    updateRowButtons(r);
-}
-
-void MainWindow::updateRowButtons(int r)
-{
-    auto *w = ui->taskTable->cellWidget(r, 5);
-    if (!w)
-        return;
-    const TranscodeTask *t = nullptr;
-    for (const TranscodeTask &ct : m_queue.tasks())
-        if (ct.id == w->property("taskId").toString())
-            t = &ct;
-    if (!t)
-        return;
-    using S = TranscodeTask::State;
-    for (QToolButton *b : w->findChildren<QToolButton *>()) {
-        if (b->objectName() == "btnStart")
-            b->setVisible(t->state == S::Waiting);
-        else if (b->objectName() == "btnPause")
-            b->setVisible(t->state == S::Running);
-        else if (b->objectName() == "btnResume")
-            b->setVisible(t->state == S::Paused);
-        else if (b->objectName() == "btnCancel")
-            b->setVisible(t->state != S::Done && t->state != S::Failed
-                          && t->state != S::Cancelled);
-        else if (b->objectName() == "btnRemove")
-            b->setVisible(!m_queue.isActive(t->id)
-                          && (t->state == S::Waiting || isTerminal(t->state)));
-    }
-}
-
 void MainWindow::onTaskAdded(TranscodeTask t)
 {
-    addTaskRow(t);
+    m_model->addTask(t);
     updateEmptyState();
     updateToolbarState();
 }
 
-void MainWindow::onStateChanged(const QString &id)
+void MainWindow::onTaskAction(const QString &id, int action)
 {
-    int r = rowOf(id);
-    if (r < 0)
-        return;
-    const TranscodeTask *t = nullptr;
-    for (const TranscodeTask &ct : m_queue.tasks())
-        if (ct.id == id)
-            t = &ct;
-    if (!t)
-        return;
-
-    auto *cell = ui->taskTable->item(r, 0);
-    if (cell) {
-        cell->setText(stateLabel(t->state));
-        cell->setForeground(QBrush(stateColor(t->state)));
+    switch (action) {
+    case ActionDelegate::Start:
+        m_queue.startTask(id);
+        break;
+    case ActionDelegate::Pause:
+        m_queue.pauseTask(id);
+        break;
+    case ActionDelegate::Resume:
+        m_queue.resumeTask(id);
+        break;
+    case ActionDelegate::Stop:
+        m_queue.cancelTask(id);
+        break;
+    case ActionDelegate::Remove: {
+        // 等待中的任务先取消再移除；已结束任务 cancelTask 是空操作
+        m_queue.cancelTask(id);
+        const int idx = m_queue.indexOf(id);
+        if (idx < 0 || !m_queue.removeTask(idx))
+            return;
+        m_model->removeTask(id);
+        updateEmptyState();
+        break;
     }
-    updateRowButtons(r);
+    default:
+        return;
+    }
     updateToolbarState();
-}
-
-void MainWindow::onProgress(const QString &id, double pct, qint64 elapsedMs, double speed)
-{
-    const int r = rowOf(id);
-    if (r < 0)
-        return;
-    const int value = qBound(0, static_cast<int>(pct), 100);
-    if (auto *bar = progressBarAt(r))
-        bar->setValue(value);
-    if (auto *label = progressLabelAt(r))
-        label->setText(QStringLiteral("%1%").arg(value));
-    if (auto *cell = ui->taskTable->item(r, 3)) {
-        const qint64 secs = elapsedMs / 1000;
-        QString text = QStringLiteral("%1:%2")
-                           .arg(secs / 60, 2, 10, QChar('0'))
-                           .arg(secs % 60, 2, 10, QChar('0'));
-        if (speed > 0.001)
-            text += QStringLiteral(" · %1x").arg(speed, 0, 'f', 2);
-        cell->setText(text);
-    }
 }
 
 void MainWindow::onTaskFinished(const QString &id, TranscodeTask::State state, QString error)
 {
-    onStateChanged(id);
-    const int r = rowOf(id);
-    if (r >= 0) {
-        if (auto *bar = progressBarAt(r)) {
-            // 只有真正完成才填满进度条，失败/取消保留实际进度
-            if (state == TranscodeTask::State::Done) {
-                bar->setValue(bar->maximum());
-                if (auto *label = progressLabelAt(r))
-                    label->setText(QStringLiteral("100%"));
-            }
-        }
-        if (auto *stateCell = ui->taskTable->item(r, 0))
-            stateCell->setToolTip(error.isEmpty() ? QString() : error.simplified());
-        if (state == TranscodeTask::State::Failed && !error.isEmpty())
-            if (auto *outCell = ui->taskTable->item(r, 4))
-                outCell->setToolTip(error);
-    }
+    m_model->setError(id, error);
 
     // 系统通知（闪窗），按设置开关；取消不打扰用户
     if (Settings::systemNotifications()

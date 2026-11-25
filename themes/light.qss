@@ -65,7 +65,7 @@ QWidget#rowActions QToolButton:pressed {
 }
 
 /* ---------- 任务表 ---------- */
-QTableWidget {
+QTableWidget, QTableView {
     background-color: #ffffff;
     alternate-background-color: #f9fafb;
     border: 1px solid #dfe3e8;
@@ -75,11 +75,11 @@ QTableWidget {
     selection-color: #1f2328;
 }
 
-QTableWidget::item {
+QTableWidget::item, QTableView::item {
     padding: 6px 10px;
 }
 
-QTableWidget::item:selected {
+QTableWidget::item:selected, QTableView::item:selected {
     background-color: #e3edff;
     color: #1f2328;
 }

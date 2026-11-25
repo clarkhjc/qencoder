@@ -10,6 +10,10 @@ target_link_libraries(gui_check PRIVATE qencoder_core)
 add_dependencies(gui_check copy_themes)
 add_test(NAME gui_check COMMAND gui_check)
 
+# 测试程序输出到 build 根目录，便于直接运行 ./build/gui_check
+set_target_properties(smoke_test gui_check PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
 # GUI 测试无需真实显示器，可在无头 CI 上运行
 set_tests_properties(gui_check PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
